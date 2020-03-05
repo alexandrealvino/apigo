@@ -1,9 +1,0 @@
-{{ define "Show" }}
-    {{ template "Header" }}
-    {{ template "Menu"  }}
-    <h2> Register {{ .Id }} </h2>
-    <p>Symbol: {{ .Symbol }}</p>
-    <p>Value:  {{ .Value }}</p>
-    <p>Quota: {{ .Quota }}</p><br /> <a href="/edit?id={{ .Id }}">Edit</a></p>
-    {{ template "Footer" }}
-{{ end }}
