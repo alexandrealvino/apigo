@@ -3,10 +3,10 @@
 ### Simulator of a stock's wallet
 
  
-API Crud developed in ***Golang*** and **MySql** with the following functions:
+API that fetches data from yahoo finance and keeps track of stock prices and growth rate of your investments. Developed in ***Golang*** and **MySql** with the following functions:
 
- * Insert share (ticker, value invested)
- * Get list of all stocks in wallet and their respective quotas
+ * Insert stock (ticker, value invested)
+ * Get list of all stocks in wallet and their respective quotas, last prices and change from average price
  * Search stock by id or ticker
  * Edit value invested of a stock
  * Delete stock from wallet.
