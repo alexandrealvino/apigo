@@ -21,7 +21,7 @@ COPY . .
 RUN go build -o main .
 
 # Export necessary port
-EXPOSE 8000
+EXPOSE 8000:8000
 
 # Command to run the executable
 CMD ["./main"]
