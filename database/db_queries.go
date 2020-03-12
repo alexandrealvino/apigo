@@ -17,14 +17,14 @@ func GetWallet() ([]entities.Ticker, error){  // get wallet
 	if err != nil {
 		panic(err.Error())
 	}
-	results, err := db.Query("SELECT id, symbol, value , quota FROM tickers ORDER BY value DESC")
+	results, err := db.Query("SELECT id, symbol, value , quota, avgPrice, previousClose, lastChangePercent, changeFromAvgPrice FROM tickers ORDER BY value DESC")
 	if err != nil {
 		panic(err.Error())
 	}
 	tic := entities.Ticker{}
 	tickersList := []entities.Ticker{}
 	for results.Next() {
-		err = results.Scan(&tic.ID, &tic.Symbol, &tic.Value, &tic.Quota)
+		err = results.Scan(&tic.ID, &tic.Symbol, &tic.Value, &tic.Quota, &tic.AvgPrice, &tic.PreviousClose, &tic.LastChangePercent, &tic.ChangeFromAvgPrice)
 		if err != nil {
 			panic(err.Error())
 		}

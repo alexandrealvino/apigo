@@ -1,6 +1,6 @@
 # api_go
 
-create database api_go
+create database api_go;
 
 use api_go;
 

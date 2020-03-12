@@ -2,10 +2,12 @@ FROM golang:alpine
 
 WORKDIR /app
 
-ENV API_PORT  8080
-ENV CASSANDRA_HOST  localhost
-ENV CASSANDRA_USERNAME cassandra
-ENV CASSANDRA_PASSWORD cassandra
+ENV MYSQL_ALLOW_EMPTY_PASSWORD yes
+ENV MYSQL_USER root
+ENV MYSQL_PASSWORD !Q2w#E4r
+ENV MYSQL_DATABASE api_go
+
+ADD database/schema-apigo.sql /docker-entrypoint-initdb.d
 
 # Copy and download dependency using go mod
 COPY go.mod .
@@ -19,7 +21,7 @@ COPY . .
 RUN go build -o main .
 
 # Export necessary port
-EXPOSE 8080
+EXPOSE 8000
 
 # Command to run the executable
 CMD ["./main"]

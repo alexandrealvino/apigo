@@ -35,9 +35,9 @@ func init() {
 		panic(err.Error())
 	}
 	fmt.Println("Successfuly connected to MySQL database!")
-	var w http.ResponseWriter
-	var r *http.Request
-	getPrices(w,r)
+	//var w http.ResponseWriter
+	//var r *http.Request
+	//getPrices(w,r)
 }
 //
 func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet
@@ -47,7 +47,10 @@ func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet
 		panic(err.Error())
 	}
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(results)
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "\t")
+	encoder.Encode(results)
+	//json.NewEncoder(w).Encode(results)
 }
 //
 func getTickerById(w http.ResponseWriter, r *http.Request) { // get ticker by id
@@ -194,9 +197,11 @@ func getPrices(w http.ResponseWriter, r*http.Request)  { // get prices and updat
 		tic.LastChangePercent = lastChangePercent
 		if tic.Symbol != "" {
 			err = database.UpdatePrices(tic)
-		}
-		if err != nil {
-			panic(err.Error())
+			if err != nil {
+				panic(err.Error())
+			}
+		} else {
+			return
 		}
 	}
 	//k,_ := quote.Get("WEGE3.SA")
