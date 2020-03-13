@@ -7,11 +7,15 @@ import (
 )
 
 func DbConn() (db *sql.DB) {
-	dbDriver := "mysql"
-	dbUser := dbUser
-	dbPass := dbPass
-	dbName := dbName
-	db, err := sql.Open(dbDriver, dbUser+":"+dbPass+"@tcp(127.0.0.1:3306)/"+dbName)
+	dbdriver := dbDriver
+	dbuser := dbUser
+	dbpass := dbPass
+	dbname := dbName
+	//dbdriver := "mysql"
+	//dbuser := "root"
+	//dbpass := "!Q2w#E4r"
+	//dbname := "api_go"
+	db, err := sql.Open(dbdriver, dbuser+":"+dbpass+"@tcp(127.0.0.1:3306)/"+dbname)
 	if err != nil {
 		panic(err.Error())
 	}
