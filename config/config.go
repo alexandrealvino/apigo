@@ -8,9 +8,9 @@ import (
 
 func DbConn() (db *sql.DB) {
 	dbDriver := "mysql"
-	dbUser := "root"
-	dbPass := "!Q2w#E4r"
-	dbName := "api_go"
+	dbUser := dbUser
+	dbPass := dbPass
+	dbName := dbName
 	db, err := sql.Open(dbDriver, dbUser+":"+dbPass+"@tcp(127.0.0.1:3306)/"+dbName)
 	if err != nil {
 		panic(err.Error())
