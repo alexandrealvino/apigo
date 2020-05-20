@@ -10,11 +10,11 @@ create table tickers
         primary key,
     symbol   varchar(10)            not null,
     value    float(64,2)            not null,
-    quota    float(64,2)            not null,
-    avgPrice float(64,2)            not null,
-    previousClose float(64,2)       not null,
-    lastChangePercent float(64,2)   not null,
-    changeFromAvgPrice float(64,2)  not null
+    quota    float(64,2)            null,
+    avgPrice float(64,2)            null,
+    previousClose float(64,2)       null,
+    lastChangePercent float(64,2)   null,
+    changeFromAvgPrice float(64,2)  null
 );
 
 insert into tickers (symbol, value, quota, avgPrice, previousClose, lastChangePercent, changeFromAvgPrice) values ('ABEV3', 75.28, 30.00, 0,0,0,0);

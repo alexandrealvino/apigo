@@ -2,9 +2,9 @@ package main
 
 import (
 	"apigo/entities"
-	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"strings"
 
 	//"github.com/piquette/finance-go"
@@ -27,10 +27,10 @@ import (
 	//"github.com/piquette/finance-go/quote"
 )
 //
-var db *sql.DB // instanciating
+//var db *sql.DB // instanciating
 //
 func init() {
-	err := database.CalculateQuota()
+	err := database.CalculateQuotas()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -40,17 +40,61 @@ func init() {
 	//getPrices(w,r)
 }
 //
-func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet
+
+func getIndex(w http.ResponseWriter, r *http.Request) { // render "wallet" template
 	var results []entities.Ticker
 	results, err := database.GetWallet()
+	if err != nil {	panic(err.Error())} else {}
+	tmpl, _ := template.ParseFiles("static/wallet.html")
+	err = tmpl.Execute(w, results)
 	if err != nil {
 		panic(err.Error())
 	}
+}
+//
+func addPageT(w http.ResponseWriter, r *http.Request) { // execute "addticker" template
+	Title := "New buy"
+	tmpl, _ := template.ParseFiles("static/addticker.html")
+	err := tmpl.Execute(w, Title)
+	if err != nil {
+		panic(err.Error())
+	}
+}
+//
+func addStockBuy(w http.ResponseWriter, r *http.Request) { // add stock buy to the "buys" table in database
+	err := r.ParseForm()
+	if err != nil {
+		panic(err.Error()) // Handle error here via logging and then return
+	}
+	var buy entities.StockBuy
+	buy.Symbol = r.PostFormValue("ticker")
+	buy.Quantity, _ = strconv.Atoi(r.PostFormValue("quantity"))
+	buy.Value, _ = strconv.ParseFloat(r.PostFormValue("price"), 64)
+	_ = database.InsertBuy(buy)
+}
+//
+func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet
+	var results []entities.Ticker
+	results, err := database.GetWallet()
+	if err != nil {	panic(err.Error())} else {}
 	w.Header().Add("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "\t")
-	encoder.Encode(results)
+	_ = encoder.Encode(results)
 	//json.NewEncoder(w).Encode(results)
+}
+//
+func getWalletTRefreshingAllValues(w http.ResponseWriter, r *http.Request) { // get wallet refreshing all values and execute wallet template
+	var results []entities.Ticker
+	getPrices(w,r)
+	calculateAllChangeFromAvgPrice(w,r)
+	results, err := database.GetWalletRefreshingAllValues()
+	if err != nil {	panic(err.Error())} else {}
+	tmpl, _ := template.ParseFiles("static/wallet.html")
+	err = tmpl.Execute(w, results)
+	if err != nil {
+		panic(err.Error())
+	}
 }
 //
 func getTickerById(w http.ResponseWriter, r *http.Request) { // get ticker by id
@@ -63,7 +107,7 @@ func getTickerById(w http.ResponseWriter, r *http.Request) { // get ticker by id
 	}
 	if (result != entities.Ticker{}) {
 		w.Header().Add("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	} else {
 		println("share not found!")
 	}
@@ -79,7 +123,7 @@ func getTickerBySymbol(w http.ResponseWriter, r *http.Request) { // get ticker b
 	}
 	if (result != entities.Ticker{}) {
 		w.Header().Add("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	} else {
 		println("share not found!")
 	}
@@ -156,14 +200,15 @@ func deleteTicker(w http.ResponseWriter, r *http.Request) {  // delete ticker
 	}
 }
 //
-func calculateQuota(w http.ResponseWriter, r*http.Request)  { // calculates all quotas
-	err := database.CalculateQuota()
+func calculateQuotas(w http.ResponseWriter, r*http.Request)  { // calculates all quotas
+	err := database.CalculateQuotas()
 	if err != nil {
 		panic(err.Error())
 	}
 }
 //
-func getPrices(w http.ResponseWriter, r*http.Request)  { // get prices and update closes
+// from !yahoo finance API
+func getPrices(w http.ResponseWriter, r*http.Request)  { // get prices from !yahoo finance and update closes
 	var results []entities.Ticker
 	results, err := database.GetWallet()
 	if err != nil {
@@ -175,8 +220,6 @@ func getPrices(w http.ResponseWriter, r*http.Request)  { // get prices and updat
 		ticker = element.Symbol + ".SA"
 		tickersList = append(tickersList, ticker)
 	}
-	//fmt.Println(tickersList)
-	//var q finance.Quote
 	var closePrices []float64
 	var previousClosePrice, lastChangePercent float64
 	for _, ticker := range tickersList {
@@ -185,9 +228,7 @@ func getPrices(w http.ResponseWriter, r*http.Request)  { // get prices and updat
 			// Uh-oh.
 			panic(err)
 		}
-		//fmt.Println(q)
 		ticker = strings.Replace(ticker, ".SA", "", 1)
-		//fmt.Println(ticker)
 		var tic entities.Ticker
 		previousClosePrice = q.RegularMarketPrice
 		lastChangePercent = q.RegularMarketChangePercent
@@ -204,16 +245,9 @@ func getPrices(w http.ResponseWriter, r*http.Request)  { // get prices and updat
 			return
 		}
 	}
-	//k,_ := quote.Get("WEGE3.SA")
-	//var close float64
-	//close := q.RegularMarketPreviousClose
-	// Success!
-	//fmt.Println(q,closePrices)
-	//w.Header().Add("Content-Type", "application/json")
-	//json.NewEncoder(w).Encode(k)
 }
 //
-func getAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates avg price of ticker
+func getAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates and get the avg price of the ticker in wallet
 	params := mux.Vars(r)
 	symbol := params["symbol"]
 	result, err := database.GetAvgPrice(symbol)
@@ -221,18 +255,21 @@ func getAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates avg pri
 		panic(err.Error())
 	}
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
-//
-func calculateAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates all quotas
-	err := database.CalculateAvgPrice()
+	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
 		panic(err.Error())
 	}
 }
 //
-func calculateChangeFromAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates all changes from avg
-	err := database.CalculateChangeFromAvgPrice()
+func calculateAllAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates avg price of ticker in wallet
+	err := database.CalculateAllAvgPrice()
+	if err != nil {
+		panic(err.Error())
+	}
+}
+//
+func calculateAllChangeFromAvgPrice(w http.ResponseWriter, r*http.Request)  { // calculates the return of the ticker from the avg price
+	err := database.CalculateAllChangeFromAvgPrice()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -242,18 +279,24 @@ func main() {
 	router := mux.NewRouter()  // init router
 	log.Println("Server started on: http://localhost:8000")
 	// router handlers
-	router.HandleFunc("/api/wallet", getWallet).Methods("GET")
-	router.HandleFunc("/api/wallet/{id}", getTickerById).Methods("GET")
-	router.HandleFunc("/api/wallet/{symbol}", getTickerBySymbol).Methods("GET")
-	router.HandleFunc("/api/wallet", insertTicker).Methods("POST")
-	router.HandleFunc("/api/wallet", updateTicker).Methods("PUT")
-	router.HandleFunc("/api/wallet/{id}", deleteTicker).Methods("DELETE")
-	router.HandleFunc("/api/wallet/quota/", calculateQuota).Methods("GET")
+
+	router.HandleFunc("/api", getIndex).Methods("GET")
+	router.HandleFunc("/api/addticker", addPageT).Methods("GET")
+	router.HandleFunc("/api/addticker", addStockBuy).Methods("POST")
+
+	router.HandleFunc("/api/wallet", getWallet).Methods("GET") // get wallet and return data in json
+	router.HandleFunc("/api/walletup/", getWalletTRefreshingAllValues).Methods("GET") // get wallet and return data with updated quotas in json
+	router.HandleFunc("/api/wallet/{id}", getTickerById).Methods("GET") // returns ticker by id
+	router.HandleFunc("/api/wallet/{symbol}", getTickerBySymbol).Methods("GET") // return ticker by symbol
+	router.HandleFunc("/api/wallet", insertTicker).Methods("POST") // insert ticker in database
+	router.HandleFunc("/api/wallet", updateTicker).Methods("PUT") // update ticker in the database
+	router.HandleFunc("/api/wallet/{id}", deleteTicker).Methods("DELETE") // delete ticker from database
+	router.HandleFunc("/api/wallet/quota/", calculateQuotas).Methods("GET") // calculates all quotas
 	// get stock price
-	router.HandleFunc("/api/wallet/quota/price", getPrices).Methods("GET")
-	router.HandleFunc("/api/wallet/quota/avgprice", calculateAvgPrice).Methods("GET")
-	router.HandleFunc("/api/wallet/quota/changeAll", calculateChangeFromAvgPrice).Methods("GET")
-	router.HandleFunc("/api/wallet/quota/{symbol}", getAvgPrice).Methods("GET")
+	router.HandleFunc("/api/wallet/quota/price", getPrices).Methods("GET") // fetch stocks price from !yahoo finance
+	router.HandleFunc("/api/wallet/quota/avgprice", calculateAllAvgPrice).Methods("GET") // calculates all avg prices
+	router.HandleFunc("/api/wallet/quota/changeAll", calculateAllChangeFromAvgPrice).Methods("GET") // calculate earnings from all tickers in wallet
+	router.HandleFunc("/api/wallet/quota/{symbol}", getAvgPrice).Methods("GET") // calculates and returns the avg price of the ticker
 	log.Fatal(http.ListenAndServe(":8000", router)) // if error return fatal log
 }
 //

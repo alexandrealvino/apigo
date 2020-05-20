@@ -4,6 +4,8 @@ import (
 	"apigo/config"
 	"apigo/entities"
 	"fmt"
+	"strings"
+	"time"
 )
 //
 func init() {
@@ -13,10 +15,6 @@ func init() {
 func GetWallet() ([]entities.Ticker, error){  // get wallet
 	db := config.DbConn()
 	defer db.Close()
-	err := CalculateQuota()
-	if err != nil {
-		panic(err.Error())
-	}
 	results, err := db.Query("SELECT id, symbol, value , quota, avgPrice, previousClose, lastChangePercent, changeFromAvgPrice FROM tickers ORDER BY value DESC")
 	if err != nil {
 		panic(err.Error())
@@ -33,10 +31,38 @@ func GetWallet() ([]entities.Ticker, error){  // get wallet
 	return tickersList, err
 }
 //
+func GetWalletRefreshingAllValues() ([]entities.Ticker, error){  // get wallet refreshing all values
+	db := config.DbConn()
+	defer db.Close()
+	err := CalculateQuotas()
+	if err != nil {
+		panic(err.Error())
+	}
+	err = CalculateAllAvgPrice()
+	if err != nil {
+		panic(err.Error())
+	}
+	results, err := db.Query("SELECT id, symbol, value , quota, avgPrice, previousClose, lastChangePercent, changeFromAvgPrice FROM tickers ORDER BY value DESC")
+	if err != nil {
+		panic(err.Error())
+	}
+	tic := entities.Ticker{}
+	tickersOfWallet := []entities.Ticker{}
+	for results.Next() {
+		err = results.Scan(&tic.ID, &tic.Symbol, &tic.Value, &tic.Quota, &tic.AvgPrice, &tic.PreviousClose, &tic.LastChangePercent, &tic.ChangeFromAvgPrice)
+		if err != nil {
+			panic(err.Error())
+		}
+		tickersOfWallet = append(tickersOfWallet, tic)
+	}
+	fmt.Println("All values refreshed!")
+	return tickersOfWallet, err
+}
+//
 func GetTickerById(id int) (entities.Ticker, error){  // get ticker by id
 	db := config.DbConn()
 	defer db.Close()
-	err := CalculateQuota()
+	err := CalculateQuotas()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -57,7 +83,7 @@ func GetTickerById(id int) (entities.Ticker, error){  // get ticker by id
 func GetTickerBySymbol(symbol string) (entities.Ticker, error){  // get ticker by symbol
 	db := config.DbConn()
 	defer db.Close()
-	err := CalculateQuota()
+	err := CalculateQuotas()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -108,7 +134,7 @@ func DeleteTicker(id int) (error) { // delete ticker
 	return err
 }
 //
-func CalculateQuota() (error)  {  // calculates quota
+func CalculateQuotas() (error)  {  // calculates all quotas
 	db := config.DbConn()
 	defer db.Close()
 	results, err := db.Query("SELECT id, symbol, value, quota FROM tickers")
@@ -145,13 +171,13 @@ func CalculateQuota() (error)  {  // calculates quota
 func TickerInWallet(symbol string) (entities.Ticker, error){  // checks if ticker is already in wallet
 	db := config.DbConn()
 	defer db.Close()
-	result, err := db.Query("SELECT id FROM tickers WHERE symbol = ?", symbol)
+	result, err := db.Query("SELECT id , value FROM tickers WHERE symbol = ?", symbol)
 	if err != nil {
 		panic(err.Error())
 	}
 	tic := entities.Ticker{}
 	for result.Next() {
-		err = result.Scan(&tic.ID)
+		err = result.Scan(&tic.ID, &tic.Value)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -159,7 +185,7 @@ func TickerInWallet(symbol string) (entities.Ticker, error){  // checks if ticke
 	return tic, err
 }
 //
-func GetAvgPrice(symbol string) (float64, error){  // get the avg price of the ticker
+func GetAvgPrice(symbol string) (float64, error){  // calculates and returns the avg price of the ticker
 	db := config.DbConn()
 	defer db.Close()
 	result, err := db.Query("SELECT price, quantity FROM buys WHERE symbol = ?", symbol)
@@ -179,7 +205,7 @@ func GetAvgPrice(symbol string) (float64, error){  // get the avg price of the t
 	return priceAvg, err
 }
 //
-func CalculateAvgPrice() (error) {  // calculates all avg prices
+func CalculateAllAvgPrice() (error) {  // calculates all avg prices and update their values in the database
 	db := config.DbConn()
 	defer db.Close()
 	results, err := db.Query("SELECT symbol FROM tickers")
@@ -218,7 +244,7 @@ func UpdatePrices(ticker entities.Ticker) (error) {  // update previous close by
 	return err
 }
 //
-func CalculateChangeFromAvgPrice() (error) {  // calculates all changes from avg prices
+func CalculateAllChangeFromAvgPrice() (error) {  // calculates all changes from avg prices
 	db := config.DbConn()
 	defer db.Close()
 	results, err := db.Query("SELECT symbol, avgPrice, previousClose FROM tickers")
@@ -233,7 +259,6 @@ func CalculateChangeFromAvgPrice() (error) {  // calculates all changes from avg
 			panic(err.Error())
 		}
 		ticker.ChangeFromAvgPrice = (ticker.PreviousClose - ticker.AvgPrice)/ticker.AvgPrice*100
-		fmt.Println(ticker.ChangeFromAvgPrice)
 		_, err = db.Query("UPDATE tickers  SET changeFromAvgPrice = ? WHERE symbol = ?;", ticker.ChangeFromAvgPrice, ticker.Symbol)
 		if err != nil {
 			panic(err.Error())
@@ -241,3 +266,63 @@ func CalculateChangeFromAvgPrice() (error) {  // calculates all changes from avg
 	}
 	return err
 }
+//
+func InsertBuy(buy entities.StockBuy) (error) {  // insert stock buy to "buys" table and insert or update ticker in "tickers" table
+	db := config.DbConn()
+	defer db.Close()
+	currentTime := time.Now()
+	date := currentTime.Format("2006-01-02")
+	date = strings.Replace(date, "-", "/", 2)
+	year := date[0:4]
+	month := date[5:7]
+	day := date[8:10]
+	date = day + "/" + month + "/" + year
+	_, err := db.Query("INSERT INTO buys (symbol, price, quantity, date) VALUES (?, ?, ?, ?);", buy.Symbol, buy.Value, buy.Quantity , date)
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("Successfuly bought stock!")
+	// handling exists cases
+	tickerInWallet ,_ := TickerInWallet(buy.Symbol)
+	var ticker entities.Ticker
+	if (tickerInWallet == entities.Ticker{}) {
+		ticker.Value = buy.Value
+		ticker.Symbol = buy.Symbol
+		ticker.AvgPrice = buy.Value/float64(buy.Quantity)
+		_, err := db.Query("INSERT INTO tickers (symbol, value, avgPrice) VALUES (?, ?, ?);", ticker.Symbol, ticker.Value, ticker.AvgPrice)
+		if err != nil {
+			panic(err.Error())
+		}
+	} else {
+		ticker.ID = tickerInWallet.ID
+		ticker.Value = tickerInWallet.Value + buy.Value
+		ticker.Symbol = buy.Symbol
+		_, err := db.Query("UPDATE tickers  SET value = ? WHERE id = ?;", ticker.Value, ticker.ID)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("Successfuly updated share!")
+	}
+	//
+	return err
+}
+//
+func GetTickersList() []string {
+	db := config.DbConn()
+	defer db.Close()
+	results, err := db.Query("SELECT symbol FROM tickers")
+	if err != nil {
+		panic(err.Error())
+	}
+	var ticker string
+	var tickersList []string
+	for results.Next(){
+		err = results.Scan(&ticker)
+		if err != nil {
+			panic(err.Error())
+		}
+		tickersList = append(tickersList, ticker)
+	}
+	return tickersList
+}
+//
