@@ -307,7 +307,7 @@ func InsertBuy(buy entities.StockBuy) (error) {  // insert stock buy to "buys" t
 	return err
 }
 //
-func GetTickersList() []string {
+func GetTickersList() ([]string, error) {
 	db := config.DbConn()
 	defer db.Close()
 	results, err := db.Query("SELECT symbol FROM tickers")
@@ -323,6 +323,36 @@ func GetTickersList() []string {
 		}
 		tickersList = append(tickersList, ticker)
 	}
-	return tickersList
+	return tickersList, err
+} // returns list of tickers in wallet
+//
+func GetResults(symbol string) ([]float64, string, error) { // get results from Prices table
+	db := config.DbConn()
+	defer db.Close()
+	results, err := db.Query("SELECT weekResult, monthResult, yearResult, lastUpdate FROM prices WHERE symbol = ?;", symbol)
+	if err != nil {
+		panic(err.Error())
+	}
+	var weekResult, monthResult, yearResult float64
+	var lastUpdate string
+	var resultsList []float64
+	for results.Next(){
+		err = results.Scan(&weekResult, &monthResult, &yearResult, &lastUpdate)
+		if err != nil {
+			panic(err.Error())
+		}
+		resultsList = append(resultsList, weekResult, monthResult, yearResult)
+	}
+	return resultsList,lastUpdate, err
+}
+//
+func UpdateTablePrices(lastPrice, preMarketPrice, weekResult, monthResult, yearResult float64, lastUpdate , symbol string) (error) {  // update ticker
+	db := config.DbConn()
+	defer db.Close()
+	_, err := db.Query("UPDATE prices  SET lastPrice = ?, lastClosePrice = ?, weekResult = ?, monthResult = ?, yearResult = ?, lastUpdate = ? WHERE symbol = ?;", lastPrice, preMarketPrice, weekResult, monthResult, yearResult, lastUpdate, symbol)
+	if err != nil {
+		panic(err.Error())
+	}
+	return err
 }
 //
