@@ -74,7 +74,7 @@ func addStockBuy(w http.ResponseWriter, r *http.Request) { // add stock buy to t
 	_ = database.InsertBuy(buy)
 } // add stock buy to the "buys" table in database
 //
-func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet
+func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet and returns json format
 	var results []entities.Ticker
 	results, err := database.GetWallet()
 	if err != nil {	panic(err.Error())} else {}
@@ -83,7 +83,7 @@ func getWallet(w http.ResponseWriter, r *http.Request) { // get wallet
 	encoder.SetIndent("", "\t")
 	_ = encoder.Encode(results)
 	//json.NewEncoder(w).Encode(results)
-} // get wallet
+} // get wallet in json format
 //
 func getWalletTRefreshingAllValues(w http.ResponseWriter, r *http.Request) { // get wallet refreshing all values and execute wallet template
 	var results []entities.Ticker
@@ -275,8 +275,8 @@ func calculateAllChangeFromAvgPrice(w http.ResponseWriter, r*http.Request)  { //
 		panic(err.Error())
 	}
 } // calculates the return of the ticker from the avg price
-
-func updatePrices(w http.ResponseWriter, r*http.Request)  { // get prices from !yahoo finance, calculates results and updates Prices table
+//
+func updatePricesTable(w http.ResponseWriter, r*http.Request)  { // get prices from !yahoo finance, calculates results and updates Prices table
 	var results []string
 	results, err := database.GetTickersList()
 	if err != nil {
@@ -302,42 +302,43 @@ func updatePrices(w http.ResponseWriter, r*http.Request)  { // get prices from !
 		month := time.Now().Month()
 		hour := time.Now().Hour()
 		year := time.Now().Year()
-		fmt.Print(hour)
 		resultsList , lastUpdate, _ := database.GetResults(ticker)
 		weekResult =  resultsList[0]
 		monthResult =  resultsList[1]
 		yearResult =  resultsList[2]
 		date := strconv.Itoa(monthDay) + "/" + strconv.Itoa(int(month)) + "/" + strconv.Itoa(year)
-		fmt.Println(date)
-		if (weekDay == 1) {
-			weekResult = 0.00
+		if weekDay == 1 {
+			weekResult = lastPrice
 		}
-		if (weekDay != 0 && weekDay != 1 && date != lastUpdate && hour >= 19) {
-			weekResult = weekResult + 100*(q.RegularMarketPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
-			if (month == 1 && monthDay == 1) {
+		if weekDay != 0 && weekDay !=6  && date != lastUpdate && hour >=18 && (q.MarketState == "CLOSED" || q.MarketState == "POSTPOST") {
+			weekResult = weekResult + 100*(lastPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
+			if month == 1 && monthDay == 1 {
 				yearResult = 0.00
+			}
+			if monthDay == 1 && month !=1 {
 				monthResult = 0.00
 			}
-			if (monthDay == 1 && month !=1) {
-				yearResult = yearResult + 100*(q.RegularMarketPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
-				monthResult = 0.00
+			if monthDay != 1 {
+				monthResult = monthResult + 100*(lastPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
+				yearResult = yearResult + 100*(lastPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
 			}
-			if (monthDay != 1) {
-				monthResult = monthResult + 100*(q.RegularMarketPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
-				yearResult = yearResult + 100*(q.RegularMarketPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
-			}
-		}
+		} // check if market is closed and if is not a weekend day
 		err = database.UpdateTablePrices(lastPrice, preMarketPrice, weekResult, monthResult, yearResult, date, ticker) // calls database func
 		if err != nil {panic(err)}
 		}
+	q, _ := quote.Get("WEGE3.SA")
+	w.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "\t")
+	_ = encoder.Encode(q)
 	fmt.Println("Successfuly updated table prices!")
 } // get prices from !yahoo finance, calculates results and updates Prices table
-
+//
 func main() {
 	router := mux.NewRouter()  // init router
 	log.Println("Server started on: http://localhost:8000")
-	// router handlers
 
+	// router handlers
 	router.HandleFunc("/api", getIndex).Methods("GET")
 	router.HandleFunc("/api/addticker", addPageT).Methods("GET")
 	router.HandleFunc("/api/addticker", addStockBuy).Methods("POST")
@@ -355,7 +356,7 @@ func main() {
 	router.HandleFunc("/api/wallet/quota/avgprice", calculateAllAvgPrice).Methods("GET") // calculates all avg prices
 	router.HandleFunc("/api/wallet/quota/changeAll", calculateAllChangeFromAvgPrice).Methods("GET") // calculate earnings from all tickers in wallet
 	router.HandleFunc("/api/wallet/quota/{symbol}", getAvgPrice).Methods("GET") // calculates and returns the avg price of the ticker
-	router.HandleFunc("/api/wallet/prices/up", updatePrices).Methods("GET") // // get prices from !yahoo finance, calculates results and updates Prices table
+	router.HandleFunc("/api/wallet/prices/up", updatePricesTable).Methods("GET") // // get prices from !yahoo finance, calculates results and updates Prices table
 	log.Fatal(http.ListenAndServe(":8000", router)) // if error return fatal log
 }
 //
