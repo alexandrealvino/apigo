@@ -1,6 +1,41 @@
-# api_go
+create database api_stn;
 
-create database api_go;
+use api_stn;
+
+create table cargo
+(
+    id    int auto_increment
+        primary key,
+    cargo varchar(25) null,
+    constraint cargo_cargo_uindex
+        unique (cargo)
+);
+
+create table funcionarios
+(
+    id       int auto_increment
+        primary key,
+    nome     varchar(50) not null,
+    idade    int(3)      not null,
+    cpf      char(11)    not null,
+    id_cargo int         not null,
+    constraint funcionarios_cpf_uindex
+        unique (cpf),
+    constraint funcionarios_cargo_id_fk
+        foreign key (id_cargo) references cargo (id)
+);
+
+create index funcionarios_nome_IX
+    on funcionarios (nome);
+
+
+insert into api_stn.cargo (cargo) values ('Engenheiro de Software');
+insert into api_stn.cargo (cargo) values ('Médico');
+insert into api_stn.cargo (cargo) values ('Advogado');
+insert into api_stn.cargo (cargo) values ('Analista');
+insert into api_stn.cargo (cargo) values ('Acessor de Investimentos');
+
+# api_go
 
 use api_go;
 
@@ -14,7 +49,7 @@ create table tickers
     avgPrice float(64,2)            null,
     previousClose float(64,2)       null,
     lastChangePercent float(64,2)   null,
-    changeFromAvgPrice float(64,2)  null
+    changeFromAvgPrice float(64,2)
 );
 
 insert into tickers (symbol, value, quota, avgPrice, previousClose, lastChangePercent, changeFromAvgPrice) values ('ABEV3', 75.28, 30.00, 0,0,0,0);
@@ -40,7 +75,7 @@ insert into tickers (symbol, value, quota, avgPrice, previousClose, lastChangePe
 create table buys
 (
     id       int auto_increment
-             primary key,
+        primary key,
     symbol   varchar(10) not null,
     price    float(64,2) not null,
     quantity int         not null,
@@ -90,3 +125,65 @@ insert into buys (symbol, price, quantity, date) values ('SHUL4', 129.24, 9, '02
 insert into buys (symbol, price, quantity, date) values ('WEGE3', 134.28, 3, '02/03/2020');
 
 insert into buys (symbol, price, quantity, date) values ('ITSA4', 54.30, 5, '11/03/2020');
+
+insert into buys (symbol, price, quantity, date) values ('ITSA4', 8.92, 1, '30/04/2020');
+
+insert into buys (symbol, price, quantity, date) values ('SHUL4', 11.6, 200, '10/06/2020');
+insert into buys (symbol, price, quantity, date) values ('SHUL4', 11.4, 66, '10/06/2020');
+insert into buys (symbol, price, quantity, date) values ('WEGE3', 46.00, 100, '10/06/2020');
+
+## TODO put in schema
+create table prices
+(
+    id       int auto_increment
+        primary key,
+    symbol   varchar(10) not null,
+    lastPrice    float(64,2) ,
+    lastClosePrice    float(64,2) ,
+    weekResult    float(64,2) ,
+    monthResult    float(64,2) ,
+    yearResult    float(64,2),
+    lastUpdate     char(9)
+);
+
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('ABEV3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('BIDI4', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('WEGE3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('SHUL4', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('BRKM5', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('STBP3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('CSNA3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('B3SA3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('TRIS3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('ELET3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('ITUB4', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('ITSA4', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('KLBN11', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('TAEE4', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('FLRY3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('EGIE3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('PRIO3', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('ELET6', 0,0,0,0,0,'0000000000');
+insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('TAEE11', 0,0,0,0,0,'0000000000');
+
+DELETE FROM buys WHERE id = 87;
+DELETE FROM buys WHERE id = 72;
+DELETE FROM buys WHERE id = 71;
+DELETE FROM buys WHERE id = 86;
+DELETE FROM buys WHERE id = 54;
+DELETE FROM buys WHERE id = 55;
+DELETE FROM buys WHERE id = 56;
+
+DELETE FROM tickers WHERE id = 24;
+DELETE FROM tickers WHERE id = 3;
+DELETE FROM tickers WHERE id = 4;
+DELETE FROM tickers WHERE id = 5;
+DELETE FROM tickers WHERE id = 6;
+
+UPDATE tickers  SET value = '100.00', quota = 10.00 WHERE id = 7;
+
+show databases ;
+
+
+SHOW VARIABLES LIKE 'max_connections';
+SET GLOBAL max_connections = 1000;
