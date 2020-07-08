@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="@localhost" uuid="1d87bb43-0592-4b53-8dfa-97ab6409ca8a">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://localhost:3306</jdbc-url>
+      <vm-env>
+        <property name="dbdriver :" value=" &quot;mysql&quot;" />
+        <property name="&#9;dbuser :" value=" &quot;root&quot;" />
+        <property name="&#9;dbpass :" value=" &quot;admin&quot;" />
+        <property name="&#9;dbname :" value=" &quot;api_go&quot;" />
+      </vm-env>
+    </data-source>
+  </component>
+</project>

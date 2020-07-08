@@ -322,7 +322,10 @@ func updatePricesTable(w http.ResponseWriter, r*http.Request)  { // get prices f
 				monthResult = monthResult + 100*(lastPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
 				yearResult = yearResult + 100*(lastPrice - q.RegularMarketPreviousClose)/q.RegularMarketPreviousClose
 			}
-		} // check if market is closed and if is not a weekend day
+		} else {
+			date = lastUpdate
+		}// check if market is closed and if is not a weekend day
+
 		err = database.UpdateTablePrices(lastPrice, preMarketPrice, weekResult, monthResult, yearResult, date, ticker) // calls database func
 		if err != nil {panic(err)}
 		}

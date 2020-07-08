@@ -13,7 +13,8 @@ func DbConn() (db *sql.DB) {
 	//dbname := dbName
 	dbdriver := "mysql"
 	dbuser := "root"
-	dbpass := "!Q2w#E4r"
+	//dbpass := "!Q2w#E4r"
+	dbpass := "admin"
 	dbname := "api_go"
 	db, err := sql.Open(dbdriver, dbuser+":"+dbpass+"@tcp(127.0.0.1:3306)/"+dbname)
 	if err != nil {

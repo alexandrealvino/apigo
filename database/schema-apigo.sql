@@ -36,6 +36,7 @@ insert into api_stn.cargo (cargo) values ('Analista');
 insert into api_stn.cargo (cargo) values ('Acessor de Investimentos');
 
 # api_go
+create database api_go;
 
 use api_go;
 
