@@ -10,4 +10,6 @@ API that fetches data from yahoo finance and keeps track of stock prices and gro
  * Search stock by id or ticker
  * Edit value invested of a stock
  * Delete stock from wallet.
-  
+ * Visualize all wallet in a dinamic search table
+ * Add buy order
+ * Get week, month and year data of each ticker in wallet & some others features...
