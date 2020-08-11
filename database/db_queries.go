@@ -35,6 +35,8 @@ func GetWallet() ([]entities.Ticker, error){  // get wallet
 func GetWalletRefreshingAllValues() ([]entities.Ticker, error){  // get wallet refreshing all values
 	db := config.DbConn()
 	defer db.Close()
+	//status := db.Stats()
+	//fmt.Println(status.MaxOpenConnections)
 	err := CalculateQuotas()
 	if err != nil {
 		panic(err.Error())
@@ -299,14 +301,59 @@ func InsertBuy(buy entities.StockBuy) (error) {  // insert stock buy to "buys" t
 			panic(err.Error())
 		}
 	} else {
-		ticker.ID = tickerInWallet.ID
-		ticker.Value = tickerInWallet.Value + buy.Value
-		ticker.Symbol = buy.Symbol
-		_, err := db.Query("UPDATE tickers  SET value = ? WHERE id = ?;", ticker.Value, ticker.ID)
+		results , err := db.Query("SELECT value, avgPrice FROM tickers WHERE symbol = ?;", buy.Symbol)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println("Successfuly updated share!")
+		var tic entities.Ticker
+		for results.Next() {
+			err = results.Scan(&tic.Value, &tic.AvgPrice, &tic.ID)
+		}
+		numberOFStocks := tic.Value/tic.AvgPrice
+		numberOFStocks = math.Round(float64(int(numberOFStocks) + buy.Quantity)*100)/100
+		newAvgPrice := (tic.Value + buy.Value)/numberOFStocks
+		_, err = db.Query("UPDATE tickers SET value = ?, avgPrice = ? WHERE id = ?;", tic.Value + buy.Value, newAvgPrice, tic.ID)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+	//
+	return err
+}
+//
+func InsertSell(buy entities.StockBuy) (error) {  // insert stock buy to "buys" table and insert or update ticker in "tickers" table
+	db := config.DbConn()
+	defer db.Close()
+	currentTime := time.Now()
+	date := currentTime.Format("2006-01-02")
+	date = strings.Replace(date, "-", "/", 2)
+	year := date[0:4]
+	month := date[5:7]
+	day := date[8:10]
+	date = day + "/" + month + "/" + year
+	_, err := db.Query("INSERT INTO buys (symbol, price, quantity, date) VALUES (?, ?, ?, ?);", buy.Symbol, -buy.Value, buy.Quantity , date)
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("Successfuly bought stock!")
+	// handling exists cases
+	tickerInWallet ,_ := TickerInWallet(buy.Symbol)
+	if (tickerInWallet != entities.Ticker{}) {
+		results , err := db.Query("SELECT value, avgPrice FROM tickers WHERE symbol = ?;", buy.Symbol)
+		if err != nil {
+			panic(err.Error())
+		}
+		var tic entities.Ticker
+		for results.Next() {
+			err = results.Scan(&tic.Value, &tic.AvgPrice, &tic.ID)
+		}
+		numberOFStocks := tic.Value/tic.AvgPrice
+		numberOFStocks = math.Round(float64(int(numberOFStocks) - buy.Quantity)*100)/100
+		newAvgPrice := (tic.Value - buy.Value)/numberOFStocks
+		_, err = db.Query("UPDATE tickers SET value = ?, avgPrice = ? WHERE id = ?;", tic.Value + buy.Value, newAvgPrice, tic.ID)
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 	//
 	return err

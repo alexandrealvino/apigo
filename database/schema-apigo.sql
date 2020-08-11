@@ -1,40 +1,3 @@
-create database api_stn;
-
-use api_stn;
-
-create table cargo
-(
-    id    int auto_increment
-        primary key,
-    cargo varchar(25) null,
-    constraint cargo_cargo_uindex
-        unique (cargo)
-);
-
-create table funcionarios
-(
-    id       int auto_increment
-        primary key,
-    nome     varchar(50) not null,
-    idade    int(3)      not null,
-    cpf      char(11)    not null,
-    id_cargo int         not null,
-    constraint funcionarios_cpf_uindex
-        unique (cpf),
-    constraint funcionarios_cargo_id_fk
-        foreign key (id_cargo) references cargo (id)
-);
-
-create index funcionarios_nome_IX
-    on funcionarios (nome);
-
-
-insert into api_stn.cargo (cargo) values ('Engenheiro de Software');
-insert into api_stn.cargo (cargo) values ('Médico');
-insert into api_stn.cargo (cargo) values ('Advogado');
-insert into api_stn.cargo (cargo) values ('Analista');
-insert into api_stn.cargo (cargo) values ('Acessor de Investimentos');
-
 # api_go
 create database api_go;
 
@@ -144,7 +107,7 @@ create table prices
     weekResult    float(64,2) ,
     monthResult    float(64,2) ,
     yearResult    float(64,2),
-    lastUpdate     char(9)
+    lastUpdate     char(10)
 );
 
 insert into prices (symbol, lastPrice, lastClosePrice, weekResult, monthResult, yearResult, lastUpdate) values ('ABEV3', 0,0,0,0,0,'0000000000');

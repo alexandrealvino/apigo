@@ -3,6 +3,7 @@ module apigo
 go 1.14
 
 require (
+	github.com/emirpasic/gods v1.12.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gorilla/mux v1.7.4
 	github.com/piquette/finance-go v1.0.0

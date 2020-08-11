@@ -12,6 +12,9 @@
         <property name="&#9;dbpass :" value=" &quot;admin&quot;" />
         <property name="&#9;dbname :" value=" &quot;api_go&quot;" />
       </vm-env>
+      <driver-properties>
+        <property name="serverTimezone" value="UTC" />
+      </driver-properties>
     </data-source>
   </component>
 </project>

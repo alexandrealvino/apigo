@@ -4,7 +4,8 @@ WORKDIR /app
 
 ENV MYSQL_DRIVER mysql
 ENV MYSQL_USER root
-ENV MYSQL_PASSWORD !Q2w#E4r
+ENV MYSQL_PASSWORD admin
+ENV MYSQL_ROOT_PASSWORD admin
 ENV MYSQL_DATABASE api_go
 
 ADD database/schema-apigo.sql /docker-entrypoint-initdb.d
