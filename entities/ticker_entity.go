@@ -1,5 +1,7 @@
 package entities
 
+// struct largest to smallest to maximize performance and memory handling TODO
+
 type Ticker struct {
 	ID     int `json:"id"`
 	Symbol string `json:"symbol"`
